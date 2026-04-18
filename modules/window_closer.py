@@ -23,7 +23,7 @@ class WindowCloserModule:
     def run(self):
         try:
             from modules.gesture import GestureDetector, OK
-            import pyautogui # type: ignore
+            import pyautogui
         except ImportError as e:
             log.error("WindowCloser disabled — missing dependency: %s", e)
             return

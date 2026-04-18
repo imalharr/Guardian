@@ -67,7 +67,7 @@ def run_setup(cfg: dict, config_path: str):
 
 def _register_face(cfg: dict):
     try:
-        import face_recognition # type: ignore
+        import face_recognition
         import cv2
     except ImportError:
         print("\nERROR: face_recognition or opencv not installed.")

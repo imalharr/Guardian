@@ -104,7 +104,7 @@ class FaceLockModule:
     def _is_known_face(self, frame) -> bool:
         """Returns True if frame contains the registered face."""
         try:
-            import face_recognition # type: ignore
+            import face_recognition
         except ImportError:
             log.error("face_recognition not installed. Run: pip install face_recognition")
             return True  # fail open so we don't lock user out
@@ -157,7 +157,7 @@ class FaceLockModule:
             self.bypass_key,
         )
 
-        next_check = time.time()  # check immediately on first run
+        last_check = 0.0  # force immediate first check
 
         try:
             while True:
@@ -167,41 +167,41 @@ class FaceLockModule:
                     time.sleep(1)
                     continue
 
-                # Time for a check?
-                if now >= next_check:
+                # --- Scheduled periodic check ---
+                if (now - last_check) >= self.check_interval:
                     frame = self.camera.get_frame()
                     if frame is not None:
                         known = self._is_known_face(frame)
-
                         if not known:
                             if self._unknown_since is None:
                                 self._unknown_since = now
-                                log.warning("Unknown face detected — starting %ds timer.", self.blackout_seconds)
-                            elif (now - self._unknown_since) >= self.blackout_seconds:
-                                if not self._locked:
-                                    log.warning("Unknown face for %ds — BLACKOUT", self.blackout_seconds)
-                                    self._locked = True
-                                    self._blackout.show()
+                                log.warning(
+                                    "Unknown face detected — blackout in %ds if it persists.",
+                                    self.blackout_seconds,
+                                )
                         else:
                             if self._unknown_since is not None:
                                 log.info("Known face confirmed — threat cleared.")
                             self._unknown_since = None
+                            self._locked = False
+                    last_check = now
 
-                    next_check = now + self.check_interval
-                    time.sleep(2)  # check at 2s granularity within the interval
-                else:
-                    # Between checks, do rapid sampling to detect sustained unknown face
-                    frame = self.camera.get_frame()
-                    if frame is not None and self._unknown_since is not None and not self._locked:
-                        known = self._is_known_face(frame)
-                        if known:
-                            log.info("Known face — clearing unknown timer.")
-                            self._unknown_since = None
-                        elif (now - self._unknown_since) >= self.blackout_seconds:
-                            log.warning("Unknown face for %ds — BLACKOUT", self.blackout_seconds)
-                            self._locked = True
-                            self._blackout.show()
-                    time.sleep(2)
+                # --- Continuous watch while threat timer is running ---
+                if self._unknown_since is not None and not self._locked:
+                    elapsed = now - self._unknown_since
+                    if elapsed >= self.blackout_seconds:
+                        log.warning("Unknown face for %.0fs — BLACKOUT", elapsed)
+                        self._locked = True
+                        self._blackout.show()
+                    else:
+                        # Sample every 2s to check if threat has cleared
+                        frame = self.camera.get_frame()
+                        if frame is not None:
+                            if self._is_known_face(frame):
+                                log.info("Known face — clearing threat timer.")
+                                self._unknown_since = None
+
+                time.sleep(2)
 
         except Exception as e:
             log.exception("FaceLock crashed: %s", e)

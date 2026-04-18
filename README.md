@@ -166,4 +166,15 @@ See [IDEAS.md](IDEAS.md) for planned features.
 
 ---
 
-Thank you for checking out this amazing project!
+## Contributing
+
+PRs welcome! Each new security tool should be:
+- A self-contained file in `modules/`
+- Registered in `main.py` with an `enabled` flag in `config.json`
+- Documented in this README
+
+---
+
+## License
+
+MIT

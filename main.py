@@ -85,7 +85,7 @@ def main():
 
     if not args.no_tray:
         try:
-            from modules.tray import run_tray # type: ignore
+            from modules.tray import run_tray
             log.info("System tray active. Right-click the tray icon to quit.")
             run_tray(cam, threads, args.config)  # blocks until quit
         except ImportError:

@@ -23,7 +23,7 @@ class TabSwitcherModule:
     def run(self):
         try:
             from modules.gesture import GestureDetector, OPEN_HAND, FIST
-            import pyautogui # type: ignore
+            import pyautogui
         except ImportError as e:
             log.error("TabSwitcher disabled — missing dependency: %s", e)
             return
